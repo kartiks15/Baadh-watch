@@ -12,6 +12,8 @@ It also provides a **one-page situation report in English and Nepali**, a **grou
 
 > Educational prototype, not an operational tool.
 
+**New to the project?** [docs/PROJECT_GUIDE.md](docs/PROJECT_GUIDE.md) explains every part in plain language, with results, limitations, a 3-minute demo script and likely judge questions.
+
 ## Quick start
 
 ```bash
