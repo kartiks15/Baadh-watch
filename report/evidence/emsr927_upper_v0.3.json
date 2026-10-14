@@ -1,0 +1,35 @@
+{
+ "summary": {
+  "extent": {
+   "iou": 0.468,
+   "precision": 0.983,
+   "recall": 0.472,
+   "f1": 0.637,
+   "ours_ha": 115.4,
+   "ems_ha": 240.4,
+   "both_ha": 113.4
+  },
+  "extent_2px_tolerance": {
+   "precision": 0.999,
+   "recall": 0.692
+  },
+  "buildings": {
+   "ems_damaged_or_destroyed": 864,
+   "inside_our_affected_area": 756,
+   "recall": 0.875,
+   "our_buildings_hit": 534
+  },
+  "roads": {
+   "ems_affected_km": 17.33,
+   "our_blocked_km": 12.71,
+   "our_blocked_km_matching_ems": 11.29
+  }
+ },
+ "reference_files": [
+  "EMSR927_AOI01_GRA_PRODUCT_observedEventA_v1.json",
+  "EMSR927_AOI02_GRA_PRODUCT_observedEventA_v2.json",
+  "EMSR927_AOI03_GRA_MONIT01_observedEventA_v1.json",
+  "EMSR927_AOI05_GRA_MONIT01_observedEventA_v2.json"
+ ],
+ "note": "Reference: European Union, Copernicus Emergency Management Service data (EMSR927). Used for checking only; never as a pipeline input. Thresholds were not tuned on this reference."
+}

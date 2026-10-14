@@ -1,0 +1,17 @@
+# secrets
+.env
+*.env
+!.env.example
+# data & caches
+data/
+validation/*
+!validation/README.md
+ml/data/
+ml/runs/
+*.onnx.data
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+frontend/dist/
+.ipynb_checkpoints/

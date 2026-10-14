@@ -1,0 +1,24 @@
+{
+ "summary": {
+  "extent": {
+   "iou": 0.12,
+   "precision": 0.999,
+   "recall": 0.12,
+   "f1": 0.215,
+   "ours_ha": 29.0,
+   "ems_ha": 240.4,
+   "both_ha": 28.9
+  },
+  "extent_2px_tolerance": {
+   "precision": 1.0,
+   "recall": 0.228
+  }
+ },
+ "reference_files": [
+  "EMSR927_AOI01_GRA_PRODUCT_observedEventA_v1.json",
+  "EMSR927_AOI02_GRA_PRODUCT_observedEventA_v2.json",
+  "EMSR927_AOI03_GRA_MONIT01_observedEventA_v1.json",
+  "EMSR927_AOI05_GRA_MONIT01_observedEventA_v2.json"
+ ],
+ "note": "Reference: European Union, Copernicus Emergency Management Service data (EMSR927). Used for checking only; never as a pipeline input. Thresholds were not tuned on this reference."
+}

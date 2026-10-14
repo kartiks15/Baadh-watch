@@ -1,0 +1,49 @@
+{
+  "inputs": [
+    "VV_dB",
+    "VH_dB"
+  ],
+  "backscatter": "sigma0",
+  "db_min": -50.0,
+  "db_max": 1.0,
+  "mean": [
+    0.6851,
+    0.5235
+  ],
+  "std": [
+    0.082,
+    0.1102
+  ],
+  "classes": [
+    "not_water",
+    "water"
+  ],
+  "encoder": "resnet34",
+  "train_data": "Sen1Floods11 hand-labelled (Bonafilia et al., CVPR-W 2020)",
+  "metrics": {
+    "valid": {
+      "iou_water": 0.6465,
+      "f1_water": 0.7853,
+      "precision": 0.7461,
+      "recall": 0.8288,
+      "accuracy": 0.95,
+      "chips": 89
+    },
+    "test": {
+      "iou_water": 0.6629,
+      "f1_water": 0.7973,
+      "precision": 0.7776,
+      "recall": 0.8181,
+      "accuracy": 0.948,
+      "chips": 90
+    },
+    "bolivia": {
+      "iou_water": 0.6573,
+      "f1_water": 0.7932,
+      "precision": 0.7717,
+      "recall": 0.8159,
+      "accuracy": 0.9325,
+      "chips": 15
+    }
+  }
+}
