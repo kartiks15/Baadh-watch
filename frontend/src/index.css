@@ -47,7 +47,8 @@ header {
 .panel { background: var(--panel); overflow-y: auto; min-height: 0; }
 .left { grid-area: left; border-right: 1px solid var(--line); padding: 4px 14px 14px; }
 .right { grid-area: right; border-left: 1px solid var(--line); display: flex; flex-direction: column; }
-.map { grid-area: map; min-height: 0; }
+.map { grid-area: map; min-height: 0; position: relative; overflow: hidden; }
+.map-canvas { position: absolute; inset: 0; }
 .map.picking canvas { cursor: crosshair !important; }
 footer { grid-area: foot; font-size: 10.5px; color: var(--muted); padding: 5px 16px; background: var(--panel); border-top: 1px solid var(--line); }
 

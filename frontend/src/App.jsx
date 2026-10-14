@@ -276,7 +276,8 @@ export default function App() {
         </section>
       </aside>
 
-      <main ref={mapEl} className={`map ${drawing || tracing ? 'picking' : ''}`} />
+      {/* MapLibre adds its own classes to the container; keep React-managed classes on a wrapper instead */}
+      <main className={`map ${drawing || tracing ? 'picking' : ''}`}><div ref={mapEl} className="map-canvas" /></main>
 
       <aside className="right panel">
         <nav className="tabs">
