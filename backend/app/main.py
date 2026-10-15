@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 import json
+import shutil
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -21,15 +23,31 @@ from scipy.spatial import cKDTree
 from shapely.geometry import LineString, Point
 
 from pipeline import sitrep, terrain
-from pipeline.config import LLM_PROVIDER, MODELS, ROOT, RUNS, SH_CLIENT_ID, run_id
+from pipeline.config import LLM_PROVIDER, MODELS, OHSOME_API_KEY, ROOT, RUNS, SH_CLIENT_ID, run_id
 from pipeline.model import WaterModel
-from pipeline.run import Run
+from pipeline.run import CANCELLED, Run
 
 app = FastAPI(title="Baadhi Watch", version="0.1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 _lock = threading.Lock()  # one pipeline run at a time (protects the processing-unit quota)
 _active: dict[str, threading.Thread] = {}
+_queue: list[str] = []  # run ids waiting for the lock, in order
+
+
+def _mark_stale_runs():
+    """Runs left 'queued'/'running' by a previous server process can never finish: mark them interrupted."""
+    for f in RUNS.glob("*/run.json"):
+        try:
+            st = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        if st.get("status") in ("queued", "running"):
+            st.update(status="interrupted", error="The server restarted while this run was in progress. Run it again.")
+            f.write_text(json.dumps(st, indent=1, default=str), encoding="utf-8")
+
+
+_mark_stale_runs()
 SERVED = {".geojson": "application/geo+json", ".png": "image/png", ".csv": "text/csv", ".kml":
           "application/vnd.google-earth.kml+xml", ".md": "text/markdown", ".json": "application/json",
           ".tif": "image/tiff"}
@@ -69,7 +87,8 @@ def _read(path: Path):
 @app.get("/api/health")
 def health():
     meta = _read(MODELS / "model_meta.json") or {}
-    return {"sentinel_hub": bool(SH_CLIENT_ID), "llm": bool(LLM_PROVIDER), "llm_provider": LLM_PROVIDER,
+    return {"sentinel_hub": bool(SH_CLIENT_ID), "ohsome": bool(OHSOME_API_KEY), "llm": bool(LLM_PROVIDER),
+            "llm_provider": LLM_PROVIDER,
             "model": WaterModel().name,
             "model_metrics": meta.get("metrics"), "case_study": CASE_STUDY}
 
@@ -80,7 +99,10 @@ def list_runs():
     for d in sorted(RUNS.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True):
         st = _read(d / "run.json")
         if st:
-            out.append({k: st.get(k) for k in ("id", "bbox", "event_date", "status", "progress", "finished")})
+            row = {k: st.get(k) for k in ("id", "bbox", "event_date", "status", "progress", "step", "started",
+                                          "finished", "seconds", "error")}
+            row["queue_position"] = _queue.index(st["id"]) + 1 if st["id"] in _queue else None
+            out.append(row)
     return out
 
 
@@ -97,9 +119,18 @@ def start_run(req: RunRequest):
         return {"id": rid, "status": "running"}
     run = Run(req.bbox, req.event_date, req.res, req.event_time, use_s2=req.use_s2)
     run._save()
+    CANCELLED.discard(rid)
+    _queue.append(rid)
 
     def work():
         with _lock:
+            if rid in _queue:
+                _queue.remove(rid)
+            if rid in CANCELLED:  # cancelled while waiting in the queue
+                CANCELLED.discard(rid)
+                run.state.update(status="cancelled", error="Cancelled before it started.")
+                run._save()
+                return
             try:
                 run.execute()
             except Exception:  # noqa: BLE001 - error is recorded in run.json
@@ -109,6 +140,28 @@ def start_run(req: RunRequest):
     _active[rid] = t
     t.start()
     return {"id": rid, "status": "queued"}
+
+
+@app.post("/api/runs/{rid}/cancel")
+def cancel_run(rid: str):
+    d = _run_dir(rid)
+    st = _read(d / "run.json") or {}
+    if rid in _active and _active[rid].is_alive():
+        CANCELLED.add(rid)  # the run stops at its next checkpoint (or before it starts, if queued)
+        return {"id": rid, "status": "cancelling"}
+    if st.get("status") in ("queued", "running"):
+        st.update(status="cancelled", error="Cancelled by user.")
+        (d / "run.json").write_text(json.dumps(st, indent=1, default=str), encoding="utf-8")
+    return {"id": rid, "status": st.get("status", "unknown")}
+
+
+@app.delete("/api/runs/{rid}")
+def delete_run(rid: str):
+    d = _run_dir(rid)
+    if rid in _active and _active[rid].is_alive():
+        raise HTTPException(409, "This run is still active. Cancel it first.")
+    shutil.rmtree(d, ignore_errors=True)
+    return {"id": rid, "deleted": True}
 
 
 @app.get("/api/runs/{rid}")

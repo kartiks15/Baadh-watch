@@ -25,6 +25,11 @@ from .config import RUNS, Grid, Thresholds, make_grid, run_id, thresholds_dict
 from .model import WaterModel
 
 STEPS = ["scenes", "osm", "terrain", "radar", "optical", "detect", "impact", "network", "report"]
+CANCELLED: set[str] = set()  # run ids the API asked to stop
+
+
+class RunCancelled(Exception):
+    pass
 
 
 class Run:
@@ -47,7 +52,12 @@ class Run:
     def _save(self):
         (self.dir / "run.json").write_text(json.dumps(self.state, indent=1, default=str), encoding="utf-8")
 
+    def check_cancel(self):
+        if self.id in CANCELLED:
+            raise RunCancelled()
+
     def log(self, step: str, msg: str):
+        self.check_cancel()
         self.state["step"] = step
         self.state["progress"] = round(100 * STEPS.index(step) / len(STEPS))
         self.state["log"].append(f"{datetime.now():%H:%M:%S} [{step}] {msg}")
@@ -81,8 +91,15 @@ class Run:
                               finished=datetime.now(timezone.utc).isoformat(), seconds=round(time.time() - t0))
             self._save()
             return out
+        except RunCancelled:
+            CANCELLED.discard(self.id)
+            self.state.update(status="cancelled", error="Cancelled by user.",
+                              finished=datetime.now(timezone.utc).isoformat())
+            self._save()
+            raise
         except Exception as ex:  # noqa: BLE001
-            self.state.update(status="error", error=f"{ex.__class__.__name__}: {ex}",
+            friendly = isinstance(ex, osm.OverpassTimeout)  # already a plain-language message
+            self.state.update(status="error", error=str(ex) if friendly else f"{ex.__class__.__name__}: {ex}",
                               trace=traceback.format_exc()[-3000:])
             self._save()
             raise
@@ -100,7 +117,7 @@ class Run:
             self.log("scenes", f"after {p.post.label} | before {', '.join(x.label for x in p.pres)}")
 
         self.log("osm", "pre-event OpenStreetMap snapshot")
-        o = osm.fetch_all(self.bbox, ev)
+        o = osm.fetch_all(self.bbox, ev, check=self.check_cancel, log=lambda m: self.log("osm", m))
         self.log("osm", f"snapshot {o['snapshot']} ({o.get('source')}): {len(o['roads']['features'])} roads, "
                         f"{len(o['buildings']['features'])} buildings, {len(o['places']['features'])} places")
 
@@ -128,6 +145,7 @@ class Run:
         for p in pairs:
             self.log("radar", f"Sentinel-1 {p.post.label}")
             post = fetch.fetch_s1(grid, p.post)
+            self.check_cancel()
             pres = [fetch.fetch_s1(grid, x) for x in p.pres]
             tracks.append(detect.track_evidence(post, pres, valley, model, th))
 

@@ -161,7 +161,8 @@ This is the **AI component we submit for judging**.
 - The challenge suggested the ohsome API, but its download endpoints were returning *403 Forbidden* (the new version needs a separate key). Public Overpass servers were also overloaded.
 - **Our solution:** Geofabrik publishes **dated** snapshots of Nepal. `nepal-260801.osm.pbf` is OpenStreetMap exactly as it was on **1 Aug 2026**. We downloaded it once and built a fast local index: any area query takes about **4 seconds** with no dependence on public servers. That matters for the live judging.
 - For the case study this gives **41,371 roads, 201,525 buildings, 727 villages and 263 towns/hospitals**.
-- Outside Nepal, the system falls back to Overpass "attic" queries, which return OSM as it was on a chosen date.
+- **Outside Nepal** (e.g. Chamoli in India, or Japan), the system uses the **ohsome API v2** from HeiGIT, the source the challenge recommends. It returns OpenStreetMap exactly as it was on the day before the flood, for any place and any date since 2007, and it needs a free API key (`OHSOME_API_KEY` in `.env`).
+- **No key?** It falls back to public Overpass "attic" queries, which do the same job but are often overloaded.
 
 ### 4.7 What was damaged? (`backend/pipeline/impact.py`)
 

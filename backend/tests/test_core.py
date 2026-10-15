@@ -81,3 +81,30 @@ def test_cut_off_when_only_road_is_flooded():
     assert status["W"] == "connected"
     v = next(r for r in res["settlements"] if r["name"] == "V")
     assert v["cause"]["km_along_route"] == 1.0  # first blocked segment starts 1 km from V
+
+
+def test_ohsome_parquet_parsing():
+    """Parse a table shaped like ohsome v2 features.parquet (osm_type, osm_id, tags MAP, geom WKB)."""
+    import io
+
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    import shapely
+    from shapely.geometry import Polygon
+
+    from pipeline import ohsome
+
+    poly = Polygon([(79.6, 30.5), (79.61, 30.5), (79.61, 30.51), (79.6, 30.5)])
+    table = pa.table({
+        "osm_type": ["way", "node"],
+        "osm_id": pa.array([11, 22], pa.int64()),
+        "tags": pa.array([[("amenity", "hospital"), ("name", "Joshimath CHC")], [("place", "village")]],
+                         pa.map_(pa.string(), pa.string())),
+        "geom": [shapely.to_wkb(poly), shapely.to_wkb(Point(79.7, 30.55))],
+    })
+    buf = io.BytesIO()
+    pq.write_table(table, buf)
+    feats = ohsome._features(pq.read_table(io.BytesIO(buf.getvalue())), "health")
+    assert feats[0]["properties"] == {"amenity": "hospital", "name": "Joshimath CHC", "@osmId": "way/11"}
+    assert feats[0]["geometry"]["type"] == "Point"  # facility outline reduced to a point
+    assert feats[1]["properties"]["@osmId"] == "node/22"

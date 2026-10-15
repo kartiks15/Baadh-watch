@@ -23,6 +23,9 @@ VALIDATION = ROOT / "validation"
 load_dotenv(ROOT / ".env")
 
 SH_CLIENT_ID = os.getenv("SH_CLIENT_ID", "")
+# ohsome API v2 (HeiGIT): pre-event OSM for any area and date. Free key: https://account.heigit.org/signup
+OHSOME_API_KEY = os.getenv("OHSOME_API_KEY", "")
+OHSOME_URL = os.getenv("OHSOME_URL", "https://api.heigit.org/ohsome-api/v2").rstrip("/")
 SH_CLIENT_SECRET = os.getenv("SH_CLIENT_SECRET", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "claude-opus-5-5")

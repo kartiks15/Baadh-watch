@@ -23,6 +23,7 @@ uv pip install --python .venv/Scripts/python.exe -r backend/requirements.txt osm
 
 # 2. credentials: copy .env.example to .env and fill in the Sentinel Hub OAuth client (free CDSE account)
 #    https://shapps.dataspace.copernicus.eu/dashboard/ → User settings → OAuth clients
+#    For areas outside Nepal also add a free ohsome API key (OHSOME_API_KEY): https://account.heigit.org/signup
 
 # 3. (recommended) local pre-event OSM snapshot for Nepal, used instead of public Overpass servers
 curl -L -o data/osm_extracts/nepal-260801.osm.pbf https://download.geofabrik.de/asia/nepal-260801.osm.pbf
@@ -132,11 +133,11 @@ This reports extent IoU, precision, recall and F1, plus a 2-pixel tolerance vari
 | Sentinel-1 GRD | `pipeline/fetch.py`, via Sentinel Hub on CDSE |
 | Sentinel-2 L2A | `pipeline/fetch.py` |
 | Copernicus DEM GLO-30 | AWS Open Data COGs, plus Sentinel Hub orthorectification |
-| Pre-event OSM | Geofabrik `nepal-260801` (state of 1 Aug 2026), or Overpass `[date:"<event−1 day>"]` |
+| Pre-event OSM | Geofabrik `nepal-260801` (state of 1 Aug 2026) for Nepal; elsewhere the **ohsome API v2** snapshot at event − 1 day (needs a free key), falling back to Overpass `[date:"<event−1 day>"]` |
 | Training data | Sen1Floods11 |
 
 - **Not used as inputs:** Copernicus EMS, UNOSAT or other damage maps, post-event OSM, and commercial imagery (e.g. Maxar/Planet open data).
-- The ohsome API's v1 extraction endpoints now return 403, and v2 requires a key. The same pre-event snapshot therefore comes from Geofabrik's dated extract or Overpass attic queries.
+- The ohsome API's v1 extraction endpoints now return 403. We use **ohsome v2** (free key) for areas outside Nepal: it returns OSM exactly as it was at a chosen timestamp. Nepal uses Geofabrik's dated extract so the case study runs offline, and public Overpass attic queries are the last fallback.
 - The display basemap tiles in the dashboard are not analysed.
 
 ## Limitations (see report for detail)
