@@ -1,6 +1,6 @@
 # Baadhi Watch: flood damage and cut-off settlements from space
 
-*Baadhi (बाढी) means flood in Nepali.* Built for the Multimodal AI Hackathon 2026, Track B: **Mapping Flood Damage from Space**.
+*Baadhi (बाढी) means flood in Nepali.* Built for the DEVPOST Multimodal AI Hackathon 2026, Track B: **Mapping Flood Damage from Space**.
 
 Give it **an area and a flood date**. Starting from raw satellite data, it answers the three questions rescue teams ask:
 
